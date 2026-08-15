@@ -21,4 +21,5 @@ coverage/
 .DS_Store
 *.db
 *.log
-
+backend/uploads/*
+!backend/uploads/.gitkeep

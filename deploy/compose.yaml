@@ -1,0 +1,65 @@
+services:
+  edge:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [edge, private]
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://worldconnect:${POSTGRES_PASSWORD}@database:5432/worldconnect
+      ALLOWED_ORIGINS: https://${APP_DOMAIN}
+      PUBLIC_BASE_URL: https://${API_DOMAIN}
+      FRONTEND_BASE_URL: https://${APP_DOMAIN}
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks: [private]
+
+  database:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: worldconnect
+      POSTGRES_USER: worldconnect
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U worldconnect -d worldconnect"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [private]
+
+networks:
+  edge:
+  private:
+    internal: true
+
+volumes:
+  postgres_data:
+  uploads:
+  caddy_data:
+  caddy_config:
