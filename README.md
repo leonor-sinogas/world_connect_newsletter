@@ -74,6 +74,9 @@ The development API can use SQLite; production uses containerized PostgreSQL. Se
 
 The deployment intentionally has no public PostgreSQL or SSH port. Use AWS Systems Manager Session Manager for administration.
 
+Current production frontend: <https://world-connect.alicenbob.com>  
+Current production API health check: <https://world-connect-api.alicenbob.com/health>
+
 1. Configure the AWS SSO profile and sign in:
 
    ```bash
