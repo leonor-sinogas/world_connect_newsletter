@@ -22,7 +22,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+psycopg://worldconnect:${POSTGRES_PASSWORD}@database:5432/worldconnect
-      ALLOWED_ORIGINS: https://${APP_DOMAIN}
+      CORS_ORIGINS: '["https://${APP_DOMAIN}"]'
       PUBLIC_BASE_URL: https://${API_DOMAIN}
       FRONTEND_BASE_URL: https://${APP_DOMAIN}
     volumes:
