@@ -35,6 +35,17 @@ class NewsletterOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class AdminNewsletterOut(BaseModel):
+    id: int
+    owner_id: int | None
+    owner_username: str = ""
+    title: str
+    description: str
+    visibility: str
+    category: str
+    created_at: datetime
+
+
 class IssueCreate(BaseModel):
     author_id: int
     title: str = Field(min_length=1, max_length=160)

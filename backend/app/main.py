@@ -44,6 +44,7 @@ from app.schemas import (
     NewsletterInviteCreate,
     NewsletterTransfer,
     AdminPasswordUpdate,
+    AdminNewsletterOut,
     NewsletterOut,
     NewsletterShareLinkOut,
     PasswordResetComplete,
@@ -352,6 +353,65 @@ def get_user(user_id: int, user: User = Depends(current_user), db: Session = Dep
 @app.get("/admin/users", response_model=list[UserOut])
 def admin_users(_: User = Depends(require_admin), db: Session = Depends(get_db)):
     return db.scalars(select(User).order_by(User.created_at.asc(), User.id.asc())).all()
+
+
+@app.get("/admin/newsletters", response_model=list[AdminNewsletterOut])
+def admin_newsletters(_: User = Depends(require_admin), db: Session = Depends(get_db)):
+    rows = db.execute(
+        select(Newsletter, User.username)
+        .outerjoin(User, User.id == Newsletter.owner_id)
+        .order_by(Newsletter.created_at.asc(), Newsletter.id.asc())
+    ).all()
+    return [
+        AdminNewsletterOut(
+            id=newsletter.id,
+            owner_id=newsletter.owner_id,
+            owner_username=owner_username or "",
+            title=newsletter.title,
+            description=newsletter.description,
+            visibility=newsletter.visibility,
+            category=newsletter.category,
+            created_at=newsletter.created_at,
+        )
+        for newsletter, owner_username in rows
+    ]
+
+
+@app.delete("/admin/newsletters/{newsletter_id}")
+def admin_delete_newsletter(
+    newsletter_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    newsletter = db.get(Newsletter, newsletter_id)
+    if newsletter is None:
+        raise HTTPException(status_code=404, detail="Newsletter not found")
+
+    issue_ids = db.scalars(
+        select(Issue.id).where(Issue.newsletter_id == newsletter_id)
+    ).all()
+    db.query(NewsletterInvitation).filter(
+        NewsletterInvitation.newsletter_id == newsletter_id
+    ).delete(synchronize_session=False)
+    db.query(NewsletterJoinRequest).filter(
+        NewsletterJoinRequest.newsletter_id == newsletter_id
+    ).delete(synchronize_session=False)
+    db.query(Subscription).filter(
+        Subscription.newsletter_id == newsletter_id
+    ).delete(synchronize_session=False)
+    if issue_ids:
+        db.query(Reply).filter(Reply.issue_id.in_(issue_ids)).delete(
+            synchronize_session=False
+        )
+        db.query(IssueImage).filter(IssueImage.issue_id.in_(issue_ids)).delete(
+            synchronize_session=False
+        )
+        db.query(Issue).filter(Issue.id.in_(issue_ids)).delete(
+            synchronize_session=False
+        )
+    db.delete(newsletter)
+    db.commit()
+    return {"status": "deleted"}
 
 
 @app.post("/admin/users/{user_id}/password")

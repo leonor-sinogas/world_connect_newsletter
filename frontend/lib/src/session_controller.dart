@@ -166,6 +166,17 @@ class SessionController extends ChangeNotifier {
     await api.request('/admin/users/$userId', method: 'DELETE');
   });
 
+  Future<List<AdminNewsletter>> adminNewsletters() async {
+    final result = await api.request('/admin/newsletters');
+    return (result as List)
+        .map((item) => AdminNewsletter.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> adminDeleteNewsletter(int newsletterId) => _run(() async {
+    await api.request('/admin/newsletters/$newsletterId', method: 'DELETE');
+  });
+
   Future<void> requestJoin(Newsletter newsletter) => _run(() async {
     await api.request(
       '/newsletters/${newsletter.id}/join-request',

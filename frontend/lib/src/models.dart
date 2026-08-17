@@ -66,6 +66,36 @@ class Newsletter {
   );
 }
 
+class AdminNewsletter {
+  const AdminNewsletter({
+    required this.id,
+    required this.ownerId,
+    required this.ownerUsername,
+    required this.title,
+    required this.description,
+    required this.visibility,
+    required this.category,
+  });
+  final int id;
+  final int? ownerId;
+  final String ownerUsername;
+  final String title;
+  final String description;
+  final String visibility;
+  final String category;
+
+  factory AdminNewsletter.fromJson(Map<String, dynamic> json) =>
+      AdminNewsletter(
+        id: json['id'] as int,
+        ownerId: json['owner_id'] as int?,
+        ownerUsername: json['owner_username'] as String? ?? '',
+        title: json['title'] as String,
+        description: json['description'] as String? ?? '',
+        visibility: json['visibility'] as String? ?? 'public',
+        category: json['category'] as String? ?? 'friends',
+      );
+}
+
 class Issue {
   const Issue({
     required this.id,

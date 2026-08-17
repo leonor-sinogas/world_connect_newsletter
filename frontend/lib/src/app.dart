@@ -398,7 +398,12 @@ class AdminPage extends StatefulWidget {
 
 class _AdminPageState extends State<AdminPage> {
   late Future<List<User>> users = widget.session.adminUsers();
-  void reload() => setState(() => users = widget.session.adminUsers());
+  late Future<List<AdminNewsletter>> newsletters = widget.session
+      .adminNewsletters();
+  void reload() => setState(() {
+    users = widget.session.adminUsers();
+    newsletters = widget.session.adminNewsletters();
+  });
   @override
   Widget build(BuildContext context) => PageFrame(
     child: Column(
@@ -478,6 +483,93 @@ class _AdminPageState extends State<AdminPage> {
                   .toList(),
             );
           },
+        ),
+        const SizedBox(height: 22),
+        Text('Newsletters', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        FutureBuilder<List<AdminNewsletter>>(
+          future: newsletters,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData)
+              return const Center(child: CircularProgressIndicator());
+            if (snapshot.data!.isEmpty) {
+              return const GlassCard(child: Text('No newsletters found.'));
+            }
+            return Column(
+              children: snapshot.data!
+                  .map(
+                    (newsletter) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: GlassCard(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.mail),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    newsletter.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${newsletter.visibility} · owner: ${newsletter.ownerUsername.isEmpty ? 'unassigned' : newsletter.ownerUsername}',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Delete newsletter',
+                              icon: const Icon(Icons.delete),
+                              onPressed: () => _adminDeleteNewsletterDialog(
+                                context,
+                                widget.session,
+                                newsletter,
+                                reload,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> _adminDeleteNewsletterDialog(
+  BuildContext context,
+  SessionController session,
+  AdminNewsletter newsletter,
+  VoidCallback reload,
+) async {
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text('Delete ${newsletter.title}?'),
+      content: const Text(
+        'This permanently removes the newsletter, its issues, replies, subscriptions, and invitations.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            await session.adminDeleteNewsletter(newsletter.id);
+            if (dialogContext.mounted) Navigator.pop(dialogContext);
+            reload();
+          },
+          child: const Text('Delete'),
         ),
       ],
     ),
