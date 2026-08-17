@@ -1637,10 +1637,11 @@ Future<void> _newsletterComposer(
                   decoration: const InputDecoration(),
                 ),
                 const SizedBox(height: 10),
-                const Text('Text'),
+                const Text('Text (up to 12,000 characters)'),
                 const SizedBox(height: 5),
                 TextField(
                   controller: issueBody,
+                  maxLength: 12000,
                   maxLines: 6,
                   decoration: const InputDecoration(),
                 ),
