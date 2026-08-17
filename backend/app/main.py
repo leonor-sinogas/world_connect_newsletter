@@ -9,7 +9,7 @@ from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import or_, select, text
+from sqlalchemy import or_, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from pwdlib import PasswordHash
@@ -43,6 +43,7 @@ from app.schemas import (
     NewsletterInvitationOut,
     NewsletterInviteCreate,
     NewsletterTransfer,
+    AdminPasswordUpdate,
     NewsletterOut,
     NewsletterShareLinkOut,
     PasswordResetComplete,
@@ -102,6 +103,12 @@ def current_user(
 def require_identity(user_id: int, user: User) -> None:
     if user_id != user.id:
         raise HTTPException(status_code=403, detail="You cannot act as another user")
+
+
+def require_admin(user: User = Depends(current_user)) -> User:
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Administrator access required")
+    return user
 
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads"
@@ -178,6 +185,7 @@ def migrate_sqlite_schema() -> None:
             "email": "TEXT DEFAULT '' NOT NULL",
             "time_zone": "TEXT DEFAULT 'GMT' NOT NULL",
             "appearance": "TEXT DEFAULT 'system' NOT NULL",
+            "is_admin": "INTEGER DEFAULT 0 NOT NULL",
         },
         "issues": {
             "author_id": "INTEGER",
@@ -339,6 +347,43 @@ def get_user(user_id: int, user: User = Depends(current_user), db: Session = Dep
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@app.get("/admin/users", response_model=list[UserOut])
+def admin_users(_: User = Depends(require_admin), db: Session = Depends(get_db)):
+    return db.scalars(select(User).order_by(User.created_at.asc(), User.id.asc())).all()
+
+
+@app.post("/admin/users/{user_id}/password")
+def admin_update_password(user_id: int, payload: AdminPasswordUpdate, _: User = Depends(require_admin), db: Session = Depends(get_db)):
+    target = db.get(User, user_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    target.password_hash = hash_password(payload.password)
+    db.query(AuthSession).filter(AuthSession.user_id == user_id).delete(synchronize_session=False)
+    db.commit()
+    return {"status": "password_updated"}
+
+
+@app.delete("/admin/users/{user_id}")
+def admin_delete_user(user_id: int, _: User = Depends(require_admin), db: Session = Depends(get_db)):
+    target = db.get(User, user_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if target.is_admin:
+        raise HTTPException(status_code=403, detail="Admin accounts cannot be deleted from this panel")
+    db.query(AuthSession).filter(AuthSession.user_id == user_id).delete(synchronize_session=False)
+    db.query(PasswordResetCode).filter(PasswordResetCode.user_id == user_id).delete(synchronize_session=False)
+    db.query(FriendRequest).filter(or_(FriendRequest.requester_id == user_id, FriendRequest.addressee_id == user_id)).delete(synchronize_session=False)
+    db.query(NewsletterInvitation).filter(or_(NewsletterInvitation.inviter_id == user_id, NewsletterInvitation.invitee_id == user_id)).delete(synchronize_session=False)
+    db.query(NewsletterJoinRequest).filter(NewsletterJoinRequest.requester_id == user_id).delete(synchronize_session=False)
+    db.query(Subscription).filter(Subscription.user_id == user_id).delete(synchronize_session=False)
+    db.execute(update(Newsletter).where(Newsletter.owner_id == user_id).values(owner_id=None))
+    db.execute(update(Issue).where(Issue.author_id == user_id).values(author_id=None))
+    db.execute(update(Reply).where(Reply.author_id == user_id).values(author_id=None))
+    db.delete(target)
+    db.commit()
+    return {"status": "deleted"}
 
 
 @app.patch("/users/{user_id}", response_model=UserOut)

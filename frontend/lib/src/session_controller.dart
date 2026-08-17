@@ -136,9 +136,34 @@ class SessionController extends ChangeNotifier {
     await refresh();
   });
 
-  Future<void> transferNewsletterOwnership(int newsletterId, int newOwnerId) => _run(() async {
-    await api.request('/newsletters/$newsletterId/transfer', method: 'POST', body: {'new_owner_id': newOwnerId});
-    await refresh();
+  Future<void> transferNewsletterOwnership(int newsletterId, int newOwnerId) =>
+      _run(() async {
+        await api.request(
+          '/newsletters/$newsletterId/transfer',
+          method: 'POST',
+          body: {'new_owner_id': newOwnerId},
+        );
+        await refresh();
+      });
+
+  Future<List<User>> adminUsers() async {
+    final result = await api.request('/admin/users');
+    return (result as List)
+        .map((item) => User.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> adminResetPassword(int userId, String password) =>
+      _run(() async {
+        await api.request(
+          '/admin/users/$userId/password',
+          method: 'POST',
+          body: {'password': password},
+        );
+      });
+
+  Future<void> adminDeleteUser(int userId) => _run(() async {
+    await api.request('/admin/users/$userId', method: 'DELETE');
   });
 
   Future<void> requestJoin(Newsletter newsletter) => _run(() async {

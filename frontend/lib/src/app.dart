@@ -300,6 +300,36 @@ class _HomeShellState extends State<HomeShell> {
       NewslettersPage(session: widget.session),
       FriendsPage(session: widget.session),
       ProfilePage(session: widget.session),
+      if (widget.session.user?.isAdmin == true)
+        AdminPage(session: widget.session),
+    ];
+    final destinations = <NavigationRailDestination>[
+      const NavigationRailDestination(
+        icon: Icon(Icons.home_outlined),
+        selectedIcon: Icon(Icons.home),
+        label: Text('Home'),
+      ),
+      const NavigationRailDestination(
+        icon: Icon(Icons.article_outlined),
+        selectedIcon: Icon(Icons.article),
+        label: Text('Newsletters'),
+      ),
+      const NavigationRailDestination(
+        icon: Icon(Icons.people_outline),
+        selectedIcon: Icon(Icons.people),
+        label: Text('Friends'),
+      ),
+      const NavigationRailDestination(
+        icon: Icon(Icons.person_outline),
+        selectedIcon: Icon(Icons.person),
+        label: Text('Profile'),
+      ),
+      if (widget.session.user?.isAdmin == true)
+        const NavigationRailDestination(
+          icon: Icon(Icons.admin_panel_settings_outlined),
+          selectedIcon: Icon(Icons.admin_panel_settings),
+          label: Text('Admin'),
+        ),
     ];
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -331,28 +361,7 @@ class _HomeShellState extends State<HomeShell> {
               indicatorColor: Theme.of(
                 context,
               ).colorScheme.primary.withValues(alpha: .18),
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.article_outlined),
-                  selectedIcon: Icon(Icons.article),
-                  label: Text('Newsletters'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.people_outline),
-                  selectedIcon: Icon(Icons.people),
-                  label: Text('Friends'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person_outline),
-                  selectedIcon: Icon(Icons.person),
-                  label: Text('Profile'),
-                ),
-              ],
+              destinations: destinations,
             ),
           ),
           Expanded(child: pages[index]),
@@ -377,6 +386,169 @@ class PageFrame extends StatelessWidget {
         ),
       ),
     ],
+  );
+}
+
+class AdminPage extends StatefulWidget {
+  const AdminPage({super.key, required this.session});
+  final SessionController session;
+  @override
+  State<AdminPage> createState() => _AdminPageState();
+}
+
+class _AdminPageState extends State<AdminPage> {
+  late Future<List<User>> users = widget.session.adminUsers();
+  void reload() => setState(() => users = widget.session.adminUsers());
+  @override
+  Widget build(BuildContext context) => PageFrame(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Admin', style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 6),
+        const Text(
+          'Account management. Passwords are never displayed; administrators can issue secure resets.',
+        ),
+        const SizedBox(height: 16),
+        FutureBuilder<List<User>>(
+          future: users,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData)
+              return const Center(child: CircularProgressIndicator());
+            return Column(
+              children: snapshot.data!
+                  .map(
+                    (user) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: GlassCard(
+                        child: Row(
+                          children: [
+                            user.photoUrl.isNotEmpty
+                                ? CircleAvatar(
+                                    backgroundImage: NetworkImage(
+                                      user.photoUrl,
+                                    ),
+                                  )
+                                : const CircleAvatar(child: Icon(Icons.person)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user.username,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(user.email),
+                                  Text(
+                                    user.isAdmin ? 'Administrator' : 'Member',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!user.isAdmin) ...[
+                              IconButton(
+                                tooltip: 'Reset password',
+                                icon: const Icon(Icons.key),
+                                onPressed: () => _adminResetDialog(
+                                  context,
+                                  widget.session,
+                                  user,
+                                  reload,
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Delete account',
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => _adminDeleteDialog(
+                                  context,
+                                  widget.session,
+                                  user,
+                                  reload,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> _adminResetDialog(
+  BuildContext context,
+  SessionController session,
+  User user,
+  VoidCallback reload,
+) async {
+  final password = TextEditingController();
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text('Reset ${user.username} password'),
+      content: TextField(
+        controller: password,
+        obscureText: true,
+        decoration: const InputDecoration(labelText: 'New password'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            if (password.text.length < 12) return;
+            await session.adminResetPassword(user.id, password.text);
+            password.clear();
+            if (dialogContext.mounted) Navigator.pop(dialogContext);
+            reload();
+          },
+          child: const Text('Reset'),
+        ),
+      ],
+    ),
+  );
+  password.dispose();
+}
+
+Future<void> _adminDeleteDialog(
+  BuildContext context,
+  SessionController session,
+  User user,
+  VoidCallback reload,
+) async {
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text('Delete ${user.username}?'),
+      content: const Text(
+        'This removes the account and disconnects its account relationships. Newsletter content is retained without the deleted author.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            await session.adminDeleteUser(user.id);
+            if (dialogContext.mounted) Navigator.pop(dialogContext);
+            reload();
+          },
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
   );
 }
 

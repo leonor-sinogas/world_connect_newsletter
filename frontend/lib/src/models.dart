@@ -6,6 +6,7 @@ class User {
     required this.photoUrl,
     required this.timeZone,
     required this.appearance,
+    required this.isAdmin,
   });
   final int id;
   final String username;
@@ -13,6 +14,7 @@ class User {
   final String photoUrl;
   final String timeZone;
   final String appearance;
+  final bool isAdmin;
   factory User.fromJson(Map<String, dynamic> json) => User(
     id: json['id'] as int,
     username: json['username'] as String,
@@ -20,6 +22,7 @@ class User {
     photoUrl: json['profile_photo_url'] as String? ?? '',
     timeZone: json['time_zone'] as String? ?? 'GMT',
     appearance: json['appearance'] as String? ?? 'system',
+    isAdmin: json['is_admin'] as bool? ?? false,
   );
 }
 

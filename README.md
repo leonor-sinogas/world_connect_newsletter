@@ -139,3 +139,9 @@ Backend tests use a temporary SQLite database through `backend/tests/conftest.py
 - Private newsletter issues and replies require newsletter access. Owner-only operations enforce the authenticated identity server-side.
 - PostgreSQL and SSH are not exposed by the deployment security group; administer EC2 through Systems Manager.
 - Keep `.env`, database files, uploads, AWS credentials, and generated build output out of Git.
+
+## Administrator access
+
+The local development administrator is created explicitly in the development database, not by public signup. The admin account exposes an additional Admin tab with a protected user directory, email/account status, secure password reset, and account deletion. Existing passwords and password hashes are never returned or displayed.
+
+For a fresh local database, create the administrator with a one-off script using the application’s password hashing function; do not put the password in source control or deployment files. Production administrator provisioning should use an out-of-band secret and a controlled migration/SSM command.

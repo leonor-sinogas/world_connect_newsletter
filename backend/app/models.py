@@ -16,6 +16,7 @@ class User(Base):
     profile_photo_url: Mapped[str] = mapped_column(Text, default="", nullable=False)
     time_zone: Mapped[str] = mapped_column(String(80), default="GMT", nullable=False)
     appearance: Mapped[str] = mapped_column(String(10), default="system", nullable=False)
+    is_admin: Mapped[bool] = mapped_column(default=False, nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

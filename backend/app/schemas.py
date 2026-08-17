@@ -105,6 +105,7 @@ class UserOut(BaseModel):
     profile_photo_url: str
     time_zone: str
     appearance: str = "system"
+    is_admin: bool = False
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -114,6 +115,10 @@ class AuthOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+class AdminPasswordUpdate(BaseModel):
+    password: str = Field(min_length=12, max_length=120)
 
 
 class ProfileUpdate(BaseModel):
