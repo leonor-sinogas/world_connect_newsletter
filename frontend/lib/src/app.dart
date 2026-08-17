@@ -1562,6 +1562,10 @@ Future<void> _newsletterComposer(
                             child: Text('Travel'),
                           ),
                           DropdownMenuItem(
+                            value: 'family',
+                            child: Text('Family'),
+                          ),
+                          DropdownMenuItem(
                             value: 'updates',
                             child: Text('Updates'),
                           ),
