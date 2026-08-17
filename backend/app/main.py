@@ -81,11 +81,35 @@ def digest_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+def gravatar_url(email: str) -> str:
+    digest = hashlib.sha256(email.strip().lower().encode("utf-8")).hexdigest()
+    return f"https://www.gravatar.com/avatar/{digest}?d=identicon&s=128"
+
+
+def avatar_url(user: User | None) -> str:
+    if user is None:
+        return ""
+    return user.profile_photo_url.strip() or gravatar_url(user.email)
+
+
+def user_out(user: User) -> UserOut:
+    return UserOut(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        profile_photo_url=avatar_url(user),
+        time_zone=user.time_zone,
+        appearance=user.appearance,
+        is_admin=user.is_admin,
+        created_at=user.created_at,
+    )
+
+
 def issue_session(user: User, db: Session) -> AuthOut:
     token = secrets.token_urlsafe(32)
     db.add(AuthSession(user_id=user.id, token_hash=digest_token(token)))
     db.commit()
-    return AuthOut(access_token=token, user=user)
+    return AuthOut(access_token=token, user=user_out(user))
 
 
 def current_user(
@@ -347,12 +371,15 @@ def get_user(user_id: int, user: User = Depends(current_user), db: Session = Dep
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return user_out(user)
 
 
 @app.get("/admin/users", response_model=list[UserOut])
 def admin_users(_: User = Depends(require_admin), db: Session = Depends(get_db)):
-    return db.scalars(select(User).order_by(User.created_at.asc(), User.id.asc())).all()
+    return [
+        user_out(item)
+        for item in db.scalars(select(User).order_by(User.created_at.asc(), User.id.asc())).all()
+    ]
 
 
 @app.get("/admin/newsletters", response_model=list[AdminNewsletterOut])
@@ -457,7 +484,7 @@ def update_profile(user_id: int, payload: ProfileUpdate, user: User = Depends(cu
     user.appearance = payload.appearance
     db.commit()
     db.refresh(user)
-    return user
+    return user_out(user)
 
 
 def user_has_invitation(newsletter_id: int, user_id: int, db: Session) -> bool:
@@ -672,7 +699,7 @@ def list_newsletter_join_requests(newsletter_id: int, user: User = Depends(curre
         raise HTTPException(status_code=403, detail="Only the owner can review join requests")
     rows = db.scalars(select(NewsletterJoinRequest).where(NewsletterJoinRequest.newsletter_id == newsletter_id, NewsletterJoinRequest.status == "pending")).all()
     requesters = {candidate.id: candidate for candidate in db.scalars(select(User).where(User.id.in_([row.requester_id for row in rows]))).all()}
-    return [{"id": row.id, "newsletter_id": row.newsletter_id, "requester_id": row.requester_id, "requester_username": requesters[row.requester_id].username if row.requester_id in requesters else "User", "requester_photo_url": requesters[row.requester_id].profile_photo_url if row.requester_id in requesters else "", "status": row.status} for row in rows]
+    return [{"id": row.id, "newsletter_id": row.newsletter_id, "requester_id": row.requester_id, "requester_username": requesters[row.requester_id].username if row.requester_id in requesters else "User", "requester_photo_url": avatar_url(requesters.get(row.requester_id)), "status": row.status} for row in rows]
 
 
 @app.patch("/newsletters/{newsletter_id}/join-requests/{request_id}")
@@ -828,7 +855,7 @@ def reply_out(reply: Reply, authors: dict[int, User] | None = None) -> ReplyOut:
         issue_id=reply.issue_id,
         author_id=reply.author_id,
         author_name=reply.author_name,
-        author_photo_url=author.profile_photo_url if author else "",
+        author_photo_url=avatar_url(author),
         body=reply.body,
         image_url=reply.image_url,
         created_at=reply.created_at,
@@ -1008,10 +1035,10 @@ def request_out(request: FriendRequest, users: dict[int, User]) -> FriendRequest
         id=request.id,
         requester_id=request.requester_id,
         requester_username=requester.username,
-        requester_photo_url=requester.profile_photo_url,
+        requester_photo_url=avatar_url(requester),
         addressee_id=request.addressee_id,
         addressee_username=addressee.username,
-        addressee_photo_url=addressee.profile_photo_url,
+        addressee_photo_url=avatar_url(addressee),
         status=request.status,
         created_at=request.created_at,
     )

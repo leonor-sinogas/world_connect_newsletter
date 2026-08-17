@@ -107,7 +107,7 @@ class SessionController extends ChangeNotifier {
       );
       _setFeedPage(result, append: true);
     } catch (exception) {
-      error = exception.toString();
+      error = userFriendlyError(exception);
     } finally {
       feedLoading = false;
       notifyListeners();
@@ -386,7 +386,7 @@ class SessionController extends ChangeNotifier {
   }
 
   void reportError(Object exception) {
-    error = exception.toString();
+    error = userFriendlyError(exception);
     notifyListeners();
   }
 
@@ -397,7 +397,7 @@ class SessionController extends ChangeNotifier {
     try {
       await action();
     } catch (e) {
-      error = e.toString();
+      error = userFriendlyError(e);
     } finally {
       busy = false;
       notifyListeners();

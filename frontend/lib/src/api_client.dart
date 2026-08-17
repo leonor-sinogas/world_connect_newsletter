@@ -12,6 +12,49 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+String userFriendlyError(Object exception) {
+  if (exception is ApiException) {
+    if (exception.statusCode == 401) {
+      return 'Invalid username or password.';
+    }
+    if (exception.statusCode == 403) {
+      return 'You do not have permission to do that.';
+    }
+    if (exception.statusCode == 404) {
+      return 'That item could not be found. Refresh and try again.';
+    }
+    if (exception.statusCode == 409) {
+      return 'That username or email is already in use.';
+    }
+    if (exception.statusCode == 422) {
+      return exception.message.isNotEmpty
+          ? exception.message
+          : 'Please check the information and try again.';
+    }
+    if (exception.statusCode >= 500) {
+      return 'The service is temporarily unavailable. Please try again.';
+    }
+    if (_isUserFacingMessage(exception.message)) return exception.message;
+    return 'Please check the information and try again.';
+  }
+  final raw = exception.toString().toLowerCase();
+  if (raw.contains('timeout') || raw.contains('failed to fetch')) {
+    return 'The request timed out. Check your connection and try again.';
+  }
+  return 'Something went wrong. Please try again.';
+}
+
+bool _isUserFacingMessage(String message) {
+  if (message.isEmpty) return false;
+  final lower = message.toLowerCase();
+  return !lower.contains('exception') &&
+      !lower.contains('clientexception') &&
+      !lower.contains('format') &&
+      !lower.contains('http') &&
+      !lower.contains('json') &&
+      !lower.contains('traceback');
+}
+
 class ApiClient {
   ApiClient({String? baseUrl})
     : baseUrl =
@@ -47,12 +90,18 @@ class ApiClient {
         ? null
         : jsonDecode(response.body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(
-        decoded is Map
-            ? decoded['detail']?.toString() ?? 'Request failed'
-            : 'Request failed',
-        response.statusCode,
-      );
+      final detail = decoded is Map ? decoded['detail'] : null;
+      final message = detail is String
+          ? detail
+          : detail is List &&
+                detail.any(
+                  (item) =>
+                      item.toString().toLowerCase().contains('password') &&
+                      item.toString().contains('12'),
+                )
+          ? 'Password must be at least 12 characters.'
+          : '';
+      throw ApiException(message, response.statusCode);
     }
     return decoded;
   }
