@@ -49,7 +49,7 @@ class AdminNewsletterOut(BaseModel):
 class IssueCreate(BaseModel):
     author_id: int
     title: str = Field(min_length=1, max_length=160)
-    body: str = Field(min_length=1, max_length=50000)
+    body: str = Field(min_length=1, max_length=12000)
     image_urls: list[str] = Field(default_factory=list, max_length=10)
     # Kept during the client migration; new clients should use image_urls.
     photo_url: str = Field(default="", max_length=2048)
@@ -80,7 +80,7 @@ class FeedOut(BaseModel):
 
 class ReplyCreate(BaseModel):
     author_id: int
-    body: str = Field(default="", max_length=20000)
+    body: str = Field(default="", max_length=300)
     image_url: str = Field(default="", max_length=2048)
 
 

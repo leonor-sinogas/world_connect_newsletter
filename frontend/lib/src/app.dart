@@ -1368,7 +1368,7 @@ Future<void> _replyComposer(
           children: [
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text('Reply (under 300 words)'),
+              child: Text('Reply (up to 300 characters)'),
             ),
             const SizedBox(height: 5),
             TextField(
@@ -1441,11 +1441,11 @@ Future<void> _issueComposer(
                   decoration: const InputDecoration(),
                 ),
                 const SizedBox(height: 14),
-                const Text('Text'),
+                const Text('Text (up to 12,000 characters)'),
                 const SizedBox(height: 5),
                 TextField(
                   controller: body,
-                  maxLength: 300,
+                  maxLength: 12000,
                   maxLines: 5,
                   minLines: 3,
                   decoration: const InputDecoration(alignLabelWithHint: true),

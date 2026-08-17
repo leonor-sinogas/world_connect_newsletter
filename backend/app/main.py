@@ -825,8 +825,8 @@ def create_issue(newsletter_id: int, payload: IssueCreate, user: User = Depends(
     body = payload.body.strip()
     if not title or not body:
         raise HTTPException(status_code=422, detail="Title and text cannot be blank")
-    if len(body.split()) > 300:
-        raise HTTPException(status_code=422, detail="Issues must be 300 words or fewer")
+    if len(body) > 12000:
+        raise HTTPException(status_code=422, detail="Issues must be 12,000 characters or fewer")
 
     image_urls = normalize_image_urls(payload.image_urls, payload.photo_url)
 
@@ -985,8 +985,8 @@ def create_reply(issue_id: int, payload: ReplyCreate, user: User = Depends(curre
     image_url = image_urls[0] if image_urls else ""
     if not body and not image_url:
         raise HTTPException(status_code=422, detail="Add reply text or an image")
-    if len(body.split()) > 300:
-        raise HTTPException(status_code=422, detail="Replies must be 300 words or fewer")
+    if len(body) > 300:
+        raise HTTPException(status_code=422, detail="Replies must be 300 characters or fewer")
 
     reply = Reply(
         issue_id=issue_id,
