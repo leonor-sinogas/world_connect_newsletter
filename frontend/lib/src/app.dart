@@ -1563,52 +1563,63 @@ Future<void> _newsletterComposer(
                 Row(
                   children: [
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: category,
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'friends',
-                            child: Text('Friends'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'travel',
-                            child: Text('Travel'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'family',
-                            child: Text('Family'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'updates',
-                            child: Text('Updates'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Category'),
+                          const SizedBox(height: 5),
+                          DropdownButtonFormField<String>(
+                            value: category,
+                            decoration: const InputDecoration(),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'friends',
+                                child: Text('Friends'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'travel',
+                                child: Text('Travel'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'family',
+                                child: Text('Family'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'updates',
+                                child: Text('Updates'),
+                              ),
+                            ],
+                            onChanged: (v) =>
+                                setDialogState(() => category = v ?? category),
                           ),
                         ],
-                        onChanged: (v) =>
-                            setDialogState(() => category = v ?? category),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: visibility,
-                        decoration: const InputDecoration(
-                          labelText: 'Visibility',
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'public',
-                            child: Text('Public'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'private',
-                            child: Text('Private'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Visibility'),
+                          const SizedBox(height: 5),
+                          DropdownButtonFormField<String>(
+                            value: visibility,
+                            decoration: const InputDecoration(),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'public',
+                                child: Text('Public'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'private',
+                                child: Text('Private'),
+                              ),
+                            ],
+                            onChanged: (v) => setDialogState(
+                              () => visibility = v ?? visibility,
+                            ),
                           ),
                         ],
-                        onChanged: (v) =>
-                            setDialogState(() => visibility = v ?? visibility),
                       ),
                     ),
                   ],
