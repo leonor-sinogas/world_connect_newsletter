@@ -298,10 +298,10 @@ class _HomeShellState extends State<HomeShell> {
     final pages = [
       FeedPage(session: widget.session),
       NewslettersPage(session: widget.session),
-      ProfilePage(session: widget.session),
+      FriendsPage(session: widget.session),
       if (widget.session.user?.isAdmin == true)
         AdminPage(session: widget.session),
-      FriendsPage(session: widget.session),
+      ProfilePage(session: widget.session),
     ];
     final destinations = <NavigationRailDestination>[
       const NavigationRailDestination(
@@ -315,9 +315,9 @@ class _HomeShellState extends State<HomeShell> {
         label: Text('Newsletters'),
       ),
       const NavigationRailDestination(
-        icon: Icon(Icons.person_outline),
-        selectedIcon: Icon(Icons.person),
-        label: Text('Profile'),
+        icon: Icon(Icons.people_outline),
+        selectedIcon: Icon(Icons.people),
+        label: Text('Friends'),
       ),
       if (widget.session.user?.isAdmin == true)
         const NavigationRailDestination(
@@ -326,9 +326,9 @@ class _HomeShellState extends State<HomeShell> {
           label: Text('Admin'),
         ),
       const NavigationRailDestination(
-        icon: Icon(Icons.people_outline),
-        selectedIcon: Icon(Icons.people),
-        label: Text('Friends'),
+        icon: Icon(Icons.person_outline),
+        selectedIcon: Icon(Icons.person),
+        label: Text('Profile'),
       ),
     ];
     return Scaffold(
