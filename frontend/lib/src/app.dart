@@ -372,21 +372,29 @@ class _HomeShellState extends State<HomeShell> {
 }
 
 class PageFrame extends StatelessWidget {
-  const PageFrame({super.key, required this.child});
+  const PageFrame({super.key, required this.child, this.onRefresh});
   final Widget child;
+  final Future<void> Function()? onRefresh;
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-    children: [
-      Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 960),
-          child: child,
+  Widget build(BuildContext context) {
+    final list = ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      children: [
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 960),
+            child: child,
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+    final refresh = onRefresh;
+    return refresh == null
+        ? list
+        : RefreshIndicator(onRefresh: refresh, child: list);
+  }
 }
 
 class AdminPage extends StatefulWidget {
@@ -406,6 +414,10 @@ class _AdminPageState extends State<AdminPage> {
   });
   @override
   Widget build(BuildContext context) => PageFrame(
+    onRefresh: () async {
+      reload();
+      await widget.session.refresh();
+    },
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -701,6 +713,7 @@ class FeedPage extends StatelessWidget {
         ),
       );
     return PageFrame(
+      onRefresh: session.refresh,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: children,
@@ -988,6 +1001,7 @@ class NewslettersPage extends StatelessWidget {
       );
     }
     return PageFrame(
+      onRefresh: session.refresh,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: children,
@@ -1090,6 +1104,7 @@ class _FriendsPageState extends State<FriendsPage> {
         discover = _list('discover'),
         incoming = _list('incoming');
     return PageFrame(
+      onRefresh: widget.session.refresh,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1218,6 +1233,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = session.user!;
     return PageFrame(
+      onRefresh: session.refresh,
       child: Column(
         children: [
           ConstrainedBox(
