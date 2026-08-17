@@ -310,8 +310,8 @@ class _HomeShellState extends State<HomeShell> {
         label: Text('Home'),
       ),
       const NavigationRailDestination(
-        icon: Icon(Icons.article_outlined),
-        selectedIcon: Icon(Icons.article),
+        icon: Icon(Icons.mail),
+        selectedIcon: Icon(Icons.mail),
         label: Text('Newsletters'),
       ),
       const NavigationRailDestination(
@@ -461,7 +461,7 @@ class _AdminPageState extends State<AdminPage> {
                               ),
                               IconButton(
                                 tooltip: 'Delete account',
-                                icon: const Icon(Icons.delete_outline),
+                                icon: const Icon(Icons.delete),
                                 onPressed: () => _adminDeleteDialog(
                                   context,
                                   widget.session,
@@ -652,14 +652,14 @@ class IssueCard extends StatelessWidget {
                   IconButton(
                     tooltip: 'Edit',
                     color: dark ? Colors.white : Colors.black,
-                    icon: const Icon(Icons.edit),
+                    icon: const Icon(Icons.create),
                     onPressed: () =>
                         _confirmDeleteIssue(context, session, issue.id),
                   ),
                 const SizedBox(width: 2),
                 IconButton(
                   tooltip: 'Add issue',
-                  icon: const Icon(Icons.post_add),
+                  icon: const Icon(Icons.add_circle),
                   onPressed: () =>
                       _issueComposer(context, session, issue.newsletterId),
                 ),
@@ -789,7 +789,7 @@ class NewslettersPage extends StatelessWidget {
           FloatingActionButton.small(
             heroTag: 'new-newsletter',
             onPressed: () => _newsletterComposer(context, session),
-            child: const Icon(Icons.edit_note),
+            child: const Icon(Icons.create),
           ),
         ],
       ),
@@ -851,7 +851,7 @@ class NewslettersPage extends StatelessWidget {
                     if (n.subscribed)
                       IconButton(
                         tooltip: 'Write a new issue',
-                        icon: const Icon(Icons.post_add),
+                        icon: const Icon(Icons.add_circle),
                         onPressed: () => _issueComposer(context, session, n.id),
                       ),
                     const SizedBox(width: 4),
