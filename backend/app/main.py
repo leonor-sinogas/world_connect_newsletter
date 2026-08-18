@@ -1065,7 +1065,9 @@ def friends(user_id: int, user: User = Depends(current_user), db: Session = Depe
         request.addressee_id if request.requester_id == user_id else request.requester_id
         for request in accepted
     }
-    connected_ids = friend_ids | {request.requester_id for request in incoming} | {request.addressee_id for request in outgoing}
+    # Keep outgoing-pending recipients in Discover so the UI can show their
+    # current request state instead of presenting a second Add friend action.
+    connected_ids = friend_ids | {request.requester_id for request in incoming}
     connected_ids.add(user_id)
 
     prospective = [user for user in users.values() if user.id not in connected_ids]

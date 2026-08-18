@@ -977,6 +977,13 @@ class NewslettersPage extends StatelessWidget {
                             : () => session.subscribe(n),
                         child: const Text('Leave'),
                       )
+                    else if (n.canJoin)
+                      OutlinedButton(
+                        onPressed: () => session.subscribe(n),
+                        child: Text(
+                          n.visibility == 'private' ? 'Join (invited)' : 'Join',
+                        ),
+                      )
                     else if (n.visibility == 'private' &&
                         n.joinStatus == 'pending')
                       const TextButton(onPressed: null, child: Text('Pending'))
@@ -1095,6 +1102,14 @@ class FriendsPage extends StatefulWidget {
 
 class _FriendsPageState extends State<FriendsPage> {
   int friendLimit = 5, discoverLimit = 5;
+  final search = TextEditingController();
+
+  @override
+  void dispose() {
+    search.dispose();
+    super.dispose();
+  }
+
   List<Map<String, dynamic>> _list(String key) {
     final value =
         widget.session.friends[key == 'discover' ? 'prospective' : key];
@@ -1108,14 +1123,28 @@ class _FriendsPageState extends State<FriendsPage> {
     final friends = _list('friends'),
         discover = _list('discover'),
         incoming = _list('incoming');
+    final query = search.text.trim().toLowerCase();
+    final filteredFriends = friends.where((u) => _matches(u, query)).toList();
+    final filteredDiscover = discover.where((u) => _matches(u, query)).toList();
+    final outgoingIds = _outgoingIds();
     return PageFrame(
       onRefresh: widget.session.refresh,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          TextField(
+            controller: search,
+            onChanged: (_) => setState(() {}),
+            textInputAction: TextInputAction.search,
+            decoration: const InputDecoration(
+              labelText: 'Search users',
+              prefixIcon: Icon(Icons.search),
+            ),
+          ),
+          const SizedBox(height: 18),
           if (incoming.isNotEmpty) _incomingSection(incoming),
-          _section('Friends', friends.take(friendLimit).toList(), true),
-          if (friends.length > friendLimit)
+          _section('Friends', filteredFriends.take(friendLimit).toList(), true),
+          if (filteredFriends.length > friendLimit)
             Center(
               child: TextButton(
                 onPressed: () => setState(() => friendLimit += 5),
@@ -1123,8 +1152,13 @@ class _FriendsPageState extends State<FriendsPage> {
               ),
             ),
           const SizedBox(height: 18),
-          _section('Discover', discover.take(discoverLimit).toList(), false),
-          if (discover.length > discoverLimit)
+          _section(
+            'Discover',
+            filteredDiscover.take(discoverLimit).toList(),
+            false,
+            pendingIds: outgoingIds,
+          ),
+          if (filteredDiscover.length > discoverLimit)
             Center(
               child: TextButton(
                 onPressed: () => setState(() => discoverLimit += 5),
@@ -1134,6 +1168,20 @@ class _FriendsPageState extends State<FriendsPage> {
         ],
       ),
     );
+  }
+
+  bool _matches(Map<String, dynamic> user, String query) =>
+      query.isEmpty ||
+      (user['username']?.toString().toLowerCase().contains(query) ?? false);
+
+  Set<int> _outgoingIds() {
+    final raw = widget.session.friends['outgoing'];
+    if (raw is! List) return <int>{};
+    return raw
+        .whereType<Map<String, dynamic>>()
+        .map((request) => request['addressee_id'])
+        .whereType<int>()
+        .toSet();
   }
 
   Widget _incomingSection(List<Map<String, dynamic>> requests) => Column(
@@ -1188,8 +1236,9 @@ class _FriendsPageState extends State<FriendsPage> {
   Widget _section(
     String title,
     List<Map<String, dynamic>> items,
-    bool isFriend,
-  ) => Column(
+    bool isFriend, {
+    Set<int> pendingIds = const <int>{},
+  }) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(title, style: Theme.of(context).textTheme.headlineSmall),
@@ -1217,11 +1266,17 @@ class _FriendsPageState extends State<FriendsPage> {
                   const SizedBox(width: 12),
                   Expanded(child: Text(u['username']?.toString() ?? 'User')),
                   if (!isFriend)
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('Add friend'),
-                      onPressed: () => widget.session.addFriend(u['id'] as int),
-                    ),
+                    pendingIds.contains(u['id'])
+                        ? const OutlinedButton(
+                            onPressed: null,
+                            child: Text('Pending'),
+                          )
+                        : OutlinedButton.icon(
+                            icon: const Icon(Icons.person_add),
+                            label: const Text('Add friend'),
+                            onPressed: () =>
+                                widget.session.addFriend(u['id'] as int),
+                          ),
                 ],
               ),
             ),
