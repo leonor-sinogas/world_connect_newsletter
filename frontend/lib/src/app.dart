@@ -163,6 +163,15 @@ class _SignInPageState extends State<SignInPage> {
     super.dispose();
   }
 
+  void _submit() {
+    if (widget.session.busy) return;
+    widget.session.authenticate(
+      username: username.text,
+      password: password.text,
+      email: signup ? email.text : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
@@ -225,6 +234,8 @@ class _SignInPageState extends State<SignInPage> {
                     TextField(
                       controller: password,
                       obscureText: hidden,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _submit(),
                       decoration: InputDecoration(
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -249,13 +260,7 @@ class _SignInPageState extends State<SignInPage> {
                       width: double.infinity,
                       child: FilledButton(
                         style: FilledButton.styleFrom(backgroundColor: accent),
-                        onPressed: widget.session.busy
-                            ? null
-                            : () => widget.session.authenticate(
-                                username: username.text,
-                                password: password.text,
-                                email: signup ? email.text : null,
-                              ),
+                        onPressed: widget.session.busy ? null : _submit,
                         child: Text(signup ? 'Create account' : 'Sign in'),
                       ),
                     ),
