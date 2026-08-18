@@ -887,6 +887,11 @@ class NewslettersPage extends StatelessWidget {
   final SessionController session;
   @override
   Widget build(BuildContext context) {
+    final newsletters = [...session.newsletters]
+      ..sort((a, b) {
+        if (a.subscribed != b.subscribed) return a.subscribed ? -1 : 1;
+        return 0;
+      });
     final children = <Widget>[
       Row(
         children: [
@@ -905,9 +910,9 @@ class NewslettersPage extends StatelessWidget {
       ),
       const SizedBox(height: 12),
     ];
-    if (session.newsletters.isEmpty)
+    if (newsletters.isEmpty)
       children.add(const GlassCard(child: Text('No newsletters yet.')));
-    for (final n in session.newsletters) {
+    for (final n in newsletters) {
       if (n.ownerId == session.user?.id && n.visibility == 'private') {
         children.insert(
           0,
