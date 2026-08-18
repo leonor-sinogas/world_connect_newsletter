@@ -1,5 +1,18 @@
 # Change log
 
+## 2026-08-18 — Production frontend authentication fix
+
+- Rebuilt and republished the World Connect Flutter web client after detecting
+  that a build made with the development defaults had been uploaded to the
+  production bucket.
+- The production bundle now embeds
+  `https://world-connect-api.alicenbob.com`; it no longer points at
+  `localhost:8000`, so login and signup work from other devices.
+- Replaced the accidentally served MBA bundle in the private `world-connect`
+  S3 bucket and invalidated CloudFront distribution `E2PUH1K5CL3QPB`.
+- Applied no-cache headers to the web shell and verified the live title,
+  production API reference, and `/health` endpoint.
+
 ## 2026-08-17 — Production release
 
 - Published the Flutter web release to the private `world-connect` S3 bucket and invalidated CloudFront.

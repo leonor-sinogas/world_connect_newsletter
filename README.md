@@ -77,6 +77,26 @@ The deployment intentionally has no public PostgreSQL or SSH port. Use AWS Syste
 Current production frontend: <https://world-connect.alicenbob.com>  
 Current production API health check: <https://world-connect-api.alicenbob.com/health>
 
+Build the production web client with the production API URL explicitly. Do not
+omit `--dart-define=API_URL`; the development default points at localhost and
+will fail for users on other devices:
+
+```bash
+cd frontend
+flutter build web --release \
+  --dart-define=API_URL=https://world-connect-api.alicenbob.com
+aws s3 sync build/web s3://world-connect --delete \
+  --profile alicenbob-sso \
+  --cache-control 'no-cache, no-store, must-revalidate'
+aws cloudfront create-invalidation \
+  --distribution-id E2PUH1K5CL3QPB --paths '/*' \
+  --profile alicenbob-sso
+```
+
+After the invalidation completes, verify the frontend title and API health.
+If a browser still shows an older app, close the old tab and perform a hard
+refresh so its Flutter service worker is updated.
+
 1. Configure the AWS SSO profile and sign in:
 
    ```bash
