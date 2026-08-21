@@ -1329,19 +1329,25 @@ class ProfilePage extends StatelessWidget {
                       ),
                       Text(user.email),
                       const SizedBox(height: 12),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final picked = await ImagePicker().pickImage(
-                            source: ImageSource.gallery,
-                          );
-                          if (picked != null)
-                            await session.updateProfilePicture(
-                              bytes: await picked.readAsBytes(),
-                              filename: picked.name,
+                      SizedBox(
+                        width: 260,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            alignment: Alignment.center,
+                          ),
+                          onPressed: () async {
+                            final picked = await ImagePicker().pickImage(
+                              source: ImageSource.gallery,
                             );
-                        },
-                        icon: const Icon(Icons.photo_camera),
-                        label: const Text('Change profile picture'),
+                            if (picked != null)
+                              await session.updateProfilePicture(
+                                bytes: await picked.readAsBytes(),
+                                filename: picked.name,
+                              );
+                          },
+                          icon: const Icon(Icons.photo_camera),
+                          label: const Text('Change profile picture'),
+                        ),
                       ),
                       const SizedBox(height: 22),
                       Center(
